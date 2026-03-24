@@ -2,6 +2,12 @@ from pathlib import Path
 
 
 _SOURCE_CORE_PATH = Path(__file__).resolve().parent.parent / "src" / "core"
+if not _SOURCE_CORE_PATH.is_dir():
+    raise ImportError(
+        f"Expected core package source directory at {_SOURCE_CORE_PATH!s}, "
+        "but it does not exist. This may indicate an unsupported installation "
+        "layout or misconfiguration."
+    )
 __path__ = [str(_SOURCE_CORE_PATH)]
 
 from .calculators import StrengthCalculator
