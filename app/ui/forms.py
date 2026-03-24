@@ -18,11 +18,12 @@ def render_settings_form(
 ) -> tuple[AppSettings, bool]:
     with st.form("planner-form"):
         st.subheader("Inputs")
-        bodyweight = st.number_input(
+        bodyweight = _render_decimal_input(
+            st,
             "Bodyweight (kg)",
-            min_value=0.0,
             value=float(initial_settings.bodyweight),
-            step=0.5,
+            key="bodyweight",
+            min_value=0.0,
         )
 
         st.caption("Lifts")
@@ -73,12 +74,12 @@ def render_settings_form(
 def _render_lift_input(
     container: st.delta_generator.DeltaGenerator, lift: LiftSettings
 ) -> LiftSettings:
-    one_rep_max = container.number_input(
+    one_rep_max = _render_decimal_input(
+        container,
         f"{lift.name} 1RM (kg)",
-        min_value=0.0,
         value=float(lift.one_rep_max),
-        step=1.0,
         key=f"{lift.abbreviation}-one-rep-max",
+        min_value=0.0,
     )
     return LiftSettings(
         name=lift.name,
@@ -93,28 +94,28 @@ def _render_lift_input(
 def _render_advanced_lift_inputs(lift: LiftSettings) -> LiftSettings:
     st.markdown(f"**{lift.name}**")
     columns = st.columns(3)
-    bodyweight_coefficient = columns[0].number_input(
+    bodyweight_coefficient = _render_decimal_input(
+        columns[0],
         "BW coeff.",
-        min_value=0.0,
         value=float(lift.bodyweight_coefficient),
-        step=0.05,
         key=f"{lift.abbreviation}-bodyweight-coefficient",
+        min_value=0.0,
         help=BODYWEIGHT_COEFFICIENT_HELP,
     )
-    training_max_factor = columns[1].number_input(
+    training_max_factor = _render_decimal_input(
+        columns[1],
         "TM factor",
-        min_value=0.0,
         value=float(lift.training_max_factor),
-        step=0.01,
         key=f"{lift.abbreviation}-training-max-factor",
+        min_value=0.0,
         help=TRAINING_MAX_FACTOR_HELP,
     )
-    rounding_increment = columns[2].number_input(
+    rounding_increment = _render_decimal_input(
+        columns[2],
         "Increment",
-        min_value=0.25,
         value=float(lift.rounding_increment),
-        step=0.25,
         key=f"{lift.abbreviation}-rounding-increment",
+        min_value=0.25,
         help=ROUNDING_INCREMENT_HELP,
     )
     return LiftSettings(
@@ -135,12 +136,12 @@ def _render_attempt_factor_inputs(attempt_factors: list[float]) -> list[float]:
     for index, attempt_factor in enumerate(attempt_factors):
         label = labels[index] if index < len(labels) else f"Attempt {index + 1}"
         rendered_attempt_factors.append(
-            columns[index].number_input(
+            _render_decimal_input(
+                columns[index],
                 label,
-                min_value=0.0,
                 value=float(attempt_factor),
-                step=0.01,
                 key=f"attempt-factor-{index}",
+                min_value=0.0,
             )
         )
 
@@ -158,3 +159,37 @@ def _pair_lifts(
         paired_lifts.append((left_lift, right_lift))
 
     return paired_lifts
+
+
+def _render_decimal_input(
+    container: st.delta_generator.DeltaGenerator,
+    label: str,
+    value: float,
+    key: str,
+    min_value: float | None = None,
+    help: str | None = None,
+) -> float:
+    raw_value = container.text_input(
+        label,
+        value=_format_decimal_input(value),
+        key=key,
+        help=help,
+    )
+    normalized_value = raw_value.strip().replace(",", ".")
+
+    try:
+        parsed_value = float(normalized_value)
+    except ValueError:
+        return value
+
+    if min_value is not None:
+        return max(parsed_value, min_value)
+
+    return parsed_value
+
+
+def _format_decimal_input(value: float) -> str:
+    if value.is_integer():
+        return str(int(value))
+
+    return f"{value:.2f}".rstrip("0").rstrip(".")

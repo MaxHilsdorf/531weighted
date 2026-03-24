@@ -4,6 +4,15 @@ import sys
 import streamlit as st
 
 
+FORM_STYLE = """
+<style>
+div[data-testid="InputInstructions"] {
+    display: none;
+}
+</style>
+"""
+
+
 def main() -> None:
     project_root = Path(__file__).resolve().parent.parent
     project_src = project_root / "src"
@@ -17,6 +26,7 @@ def main() -> None:
     from core.defaults import get_default_settings
 
     st.set_page_config(page_title="531weighted", page_icon="🏋️", layout="wide")
+    st.markdown(FORM_STYLE, unsafe_allow_html=True)
 
     st.title("531weighted")
     st.caption("Generate a 5/3/1 cycle plan or competition attempt suggestions.")
