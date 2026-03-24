@@ -27,11 +27,21 @@ def load_config(config_path: str | Path) -> dict[str, Any]:
 
 
 def load_settings(config_path: str | Path) -> AppSettings:
-    return build_settings(_load_layered_config(config_path))
+    # _load_layered_config() already applies merge_config_overrides(), so
+    # tell build_settings() that the config has been pre-merged.
+    return build_settings(_load_layered_config(config_path), pre_merged=True)
 
 
-def build_settings(config_overrides: dict[str, Any] | None = None) -> AppSettings:
-    merged_config = merge_config_overrides(config_overrides or {})
+def build_settings(
+    config_overrides: dict[str, Any] | None = None,
+    *,
+    pre_merged: bool = False,
+) -> AppSettings:
+    if pre_merged:
+        # Treat config_overrides as already merged with defaults.
+        merged_config = config_overrides or merge_config_overrides({})
+    else:
+        merged_config = merge_config_overrides(config_overrides or {})
     return AppSettings(
         bodyweight=_require_float(merged_config, "bodyweight", "app settings"),
         zero_weight_strictness=_require_float(
