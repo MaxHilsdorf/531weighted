@@ -1,27 +1,27 @@
-bodyweight: 74
-zero_weight_strictness: 0.3 # higher is stricter
+zero_weight_strictness: 0.4
+competition_attempt_factors: [0.87, 0.95, 1.0]
 
 lifts:
   - name: Muscle Up
     abbreviation: MU
     bodyweight_coefficient: 0.85
-    one_rep_max: 15
+    rounding_increment: 1.25
     training_max_factor: 0.87
   - name: Pull Up
     abbreviation: PU
     bodyweight_coefficient: 0.95
-    one_rep_max: 60
+    rounding_increment: 1.25
     training_max_factor: 0.87
   - name: Dip
     abbreviation: D
     bodyweight_coefficient: 0.85
-    one_rep_max: 95
+    rounding_increment: 1.25
     training_max_factor: 0.87
   - name: Squat
     abbreviation: SQ
     bodyweight_coefficient: 0.25
-    one_rep_max: 140
-    training_max_factor: 0.90
+    rounding_increment: 2.5
+    training_max_factor: 0.87
 
 program_weeks:
   - "5":

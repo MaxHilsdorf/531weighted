@@ -1,22 +1,19 @@
-from pathlib import Path
-from typing import Any
+from core.config_loader import (
+    build_attempt_factors,
+    build_lift_program_contexts,
+    build_program_week_contexts,
+    build_settings,
+    load_config,
+    load_settings,
+    merge_config_overrides,
+)
 
-import yaml
-
-
-def load_config(config_path: str | Path) -> dict[str, Any]:
-	resolved_path = Path(config_path).expanduser().resolve()
-
-	with resolved_path.open("r", encoding="utf-8") as config_file:
-		config = yaml.safe_load(config_file)
-
-	if not isinstance(config, dict):
-		raise ValueError("Config file must contain a top-level mapping")
-
-	if "lifts" not in config or not isinstance(config["lifts"], list):
-		raise ValueError("Config file must define a 'lifts' list")
-
-	if "program_weeks" not in config or not isinstance(config["program_weeks"], list):
-		raise ValueError("Config file must define a 'program_weeks' list")
-
-	return config
+__all__ = [
+    "build_attempt_factors",
+    "build_lift_program_contexts",
+    "build_program_week_contexts",
+    "build_settings",
+    "load_config",
+    "load_settings",
+    "merge_config_overrides",
+]
