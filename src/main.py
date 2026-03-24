@@ -16,6 +16,7 @@ def main() -> None:
         lift_program_contexts=lift_program_contexts,
         program_week_contexts=program_week_contexts,
         bodyweight=float(config["bodyweight"]),
+        zero_weight_strictness=float(config.get("zero_weight_strictness", 1.0)),
     )
 
     print(program.generate_program_report())

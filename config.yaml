@@ -1,6 +1,12 @@
 bodyweight: 74
+zero_weight_strictness: 0.3 # higher is stricter
 
 lifts:
+  - name: Muscle Up
+    abbreviation: MU
+    bodyweight_coefficient: 0.85
+    one_rep_max: 15
+    training_max_factor: 0.87
   - name: Pull Up
     abbreviation: PU
     bodyweight_coefficient: 0.95

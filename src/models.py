@@ -14,6 +14,9 @@ class Lift:
     abbreviation: str
     bodyweight_coefficient: float
 
+    def bodyweight_offset(self, bodyweight: float) -> float:
+        return bodyweight * self.bodyweight_coefficient
+
     @property
     def depends_on_bodyweight(self) -> bool:
         return self.bodyweight_coefficient > 0
