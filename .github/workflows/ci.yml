@@ -22,9 +22,7 @@ jobs:
         run: uv sync --all-groups
 
       - name: Check formatting
-        run: |
-          make format
-          git diff --exit-code
+        run: make format-check
 
       - name: Run lint
         run: make lint
