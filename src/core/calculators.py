@@ -1,4 +1,4 @@
-from core.models import Lift, LiftContext, LiftProgramContext
+from .models import Lift, LiftContext, LiftProgramContext
 
 
 class StrengthCalculator:

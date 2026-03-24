@@ -1,7 +1,8 @@
-from pathlib import Path
-import sys
-
 import streamlit as st
+
+from app.ui.forms import render_settings_form
+from app.ui.renderers import build_output, render_output
+from core.defaults import get_default_settings
 
 
 FORM_STYLE = """
@@ -14,17 +15,6 @@ div[data-testid="InputInstructions"] {
 
 
 def main() -> None:
-    project_root = Path(__file__).resolve().parent.parent
-    project_src = project_root / "src"
-
-    for path in (project_root, project_src):
-        if str(path) not in sys.path:
-            sys.path.insert(0, str(path))
-
-    from app.ui.forms import render_settings_form
-    from app.ui.renderers import build_output, render_output
-    from core.defaults import get_default_settings
-
     st.set_page_config(page_title="531weighted", page_icon="🏋️", layout="wide")
     st.markdown(FORM_STYLE, unsafe_allow_html=True)
 

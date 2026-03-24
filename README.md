@@ -30,7 +30,7 @@ uv run src/main.py
 Run the Streamlit app locally:
 
 ```bash
-uv run streamlit run app/streamlit_app.py
+uv run streamlit run streamlit_app.py
 ```
 
 The local web app will be available at `http://localhost:8501`.

@@ -1,5 +1,11 @@
-from core.models import LiftSummary
-from core.planners import CompetitionAttemptPlanner, FiveThreeOneProgram
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from .models import LiftSummary
+
+if TYPE_CHECKING:
+    from .planners import CompetitionAttemptPlanner, FiveThreeOneProgram
 
 
 def format_weight(weight: float) -> str:
