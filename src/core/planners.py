@@ -1,5 +1,5 @@
-from core.calculators import StrengthCalculator
-from core.models import (
+from .calculators import StrengthCalculator
+from .models import (
     CompetitionAttempt,
     CompetitionAttemptPlan,
     Lift,
@@ -12,6 +12,7 @@ from core.models import (
     ProgramWeekContext,
     ProgramWeekPlan,
 )
+from .report_formatters import format_attempt_report, format_program_report
 
 
 class FiveThreeOneProgram(StrengthCalculator):
@@ -69,8 +70,6 @@ class FiveThreeOneProgram(StrengthCalculator):
         return week_plans
 
     def generate_program_report(self) -> str:
-        from core.report_formatters import format_program_report
-
         return format_program_report(self)
 
     def _get_lift_performance(
@@ -138,8 +137,6 @@ class CompetitionAttemptPlanner(StrengthCalculator):
         ]
 
     def generate_attempt_report(self) -> str:
-        from core.report_formatters import format_attempt_report
-
         return format_attempt_report(self)
 
     def _get_attempts(self, lift_context: LiftContext) -> list[CompetitionAttempt]:

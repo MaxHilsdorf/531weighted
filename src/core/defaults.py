@@ -1,4 +1,4 @@
-from core.settings import AppSettings, LiftSettings, ProgramWeekSettings
+from .settings import AppSettings, LiftSettings, ProgramWeekSettings
 
 
 def get_default_settings() -> AppSettings:

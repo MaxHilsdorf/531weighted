@@ -3,22 +3,22 @@ from typing import Any
 
 import yaml
 
-from core.defaults import get_default_settings
-from core.models import (
+from .defaults import get_default_settings
+from .models import (
     Lift,
     LiftContext,
     LiftProgramContext,
     ProgramWeek,
     ProgramWeekContext,
 )
-from core.settings import AppSettings, LiftSettings, ProgramWeekSettings
+from .settings import AppSettings, LiftSettings, ProgramWeekSettings
 
 
 def load_config(config_path: str | Path) -> dict[str, Any]:
     resolved_path = Path(config_path).expanduser().resolve()
 
     with resolved_path.open("r", encoding="utf-8") as config_file:
-        config = yaml.safe_load(config_file)
+        config = yaml.safe_load(config_file) or {}
 
     if not isinstance(config, dict):
         raise ValueError("Config file must contain a top-level mapping")
@@ -27,49 +27,35 @@ def load_config(config_path: str | Path) -> dict[str, Any]:
 
 
 def load_settings(config_path: str | Path) -> AppSettings:
-    resolved_config_path = Path(config_path).expanduser().resolve()
-    config_overrides = load_config(resolved_config_path)
-
-    local_override_path = _resolve_local_override_path(resolved_config_path)
-    if local_override_path.exists():
-        local_overrides = load_config(local_override_path)
-        config_overrides = merge_config_overrides(
-            local_overrides,
-            base_config=merge_config_overrides(config_overrides),
-        )
-
-    return build_settings(config_overrides)
+    # _load_layered_config() already applies merge_config_overrides(), so
+    # tell build_settings() that the config has been pre-merged.
+    return build_settings(_load_layered_config(config_path), pre_merged=True)
 
 
-def build_settings(config_overrides: dict[str, Any] | None = None) -> AppSettings:
-    merged_config = merge_config_overrides(config_overrides or {})
+def build_settings(
+    config_overrides: dict[str, Any] | None = None,
+    *,
+    pre_merged: bool = False,
+) -> AppSettings:
+    if pre_merged:
+        # Treat config_overrides as already merged with defaults.
+        merged_config = config_overrides or merge_config_overrides({})
+    else:
+        merged_config = merge_config_overrides(config_overrides or {})
     return AppSettings(
-        bodyweight=float(merged_config["bodyweight"]),
-        zero_weight_strictness=float(merged_config["zero_weight_strictness"]),
-        competition_attempt_factors=[
-            float(value) for value in merged_config["competition_attempt_factors"]
-        ],
-        lifts=[
-            LiftSettings(
-                name=lift_config["name"],
-                abbreviation=lift_config["abbreviation"],
-                bodyweight_coefficient=float(lift_config["bodyweight_coefficient"]),
-                rounding_increment=_get_rounding_increment(lift_config),
-                one_rep_max=float(lift_config["one_rep_max"]),
-                training_max_factor=float(lift_config["training_max_factor"]),
-            )
-            for lift_config in merged_config["lifts"]
-        ],
-        program_weeks=[
-            ProgramWeekSettings(
-                name=week_config["name"],
-                scaling_factors=[
-                    float(value) for value in week_config["scaling_factors"]
-                ],
-                reps_per_set=[int(value) for value in week_config["reps_per_set"]],
-            )
-            for week_config in merged_config["program_weeks"]
-        ],
+        bodyweight=_require_float(merged_config, "bodyweight", "app settings"),
+        zero_weight_strictness=_require_float(
+            merged_config,
+            "zero_weight_strictness",
+            "app settings",
+        ),
+        competition_attempt_factors=_build_attempt_factors_config(
+            merged_config.get("competition_attempt_factors", [])
+        ),
+        lifts=_build_lift_settings(merged_config.get("lifts", [])),
+        program_weeks=_build_program_week_settings(
+            merged_config.get("program_weeks", [])
+        ),
     )
 
 
@@ -105,18 +91,18 @@ def build_lift_program_contexts(
 
     for lift_config in lifts_config:
         lift_data = _coerce_lift_config(lift_config)
-        lift = Lift(
-            name=lift_data["name"],
-            abbreviation=lift_data["abbreviation"],
-            bodyweight_coefficient=float(lift_data["bodyweight_coefficient"]),
-            rounding_increment=_get_rounding_increment(lift_data),
-        )
+        lift = _build_lift(lift_data, context="lift program context")
         lift_context = LiftContext(
-            lift=lift, one_rep_max=float(lift_data["one_rep_max"])
+            lift=lift,
+            one_rep_max=_require_float(lift_data, "one_rep_max", lift.name),
         )
         lift_program_contexts[lift] = LiftProgramContext(
             lift_context=lift_context,
-            training_max_factor=float(lift_data["training_max_factor"]),
+            training_max_factor=_require_float(
+                lift_data,
+                "training_max_factor",
+                lift.name,
+            ),
         )
 
     return lift_program_contexts
@@ -129,18 +115,25 @@ def build_program_week_contexts(
 
     for week_config in program_weeks_config:
         week_data = _coerce_program_week_config(week_config)
-        program_week = ProgramWeek(week_data["name"])
+        program_week_name = _require_str(week_data, "name", "program week")
+        program_week = ProgramWeek(program_week_name)
         program_week_contexts[program_week] = ProgramWeekContext(
             program_week=program_week,
-            scaling_factors=[float(value) for value in week_data["scaling_factors"]],
-            reps_per_set=[int(value) for value in week_data["reps_per_set"]],
+            scaling_factors=_coerce_float_list(
+                week_data.get("scaling_factors", []),
+                f"{program_week_name} scaling_factors",
+            ),
+            reps_per_set=_coerce_int_list(
+                week_data.get("reps_per_set", []),
+                f"{program_week_name} reps_per_set",
+            ),
         )
 
     return program_week_contexts
 
 
 def build_attempt_factors(attempt_factors_config: list[float]) -> list[float]:
-    return [float(value) for value in attempt_factors_config]
+    return _build_attempt_factors_config(attempt_factors_config)
 
 
 def _settings_to_dict(settings: AppSettings) -> dict[str, Any]:
@@ -217,6 +210,80 @@ def _merge_program_weeks(
 
     merged_program_weeks.extend(overrides_by_name.values())
     return merged_program_weeks
+
+
+def _load_layered_config(config_path: str | Path) -> dict[str, Any]:
+    resolved_config_path = Path(config_path).expanduser().resolve()
+    merged_config = merge_config_overrides(load_config(resolved_config_path))
+
+    local_override_path = _resolve_local_override_path(resolved_config_path)
+    if not local_override_path.exists():
+        return merged_config
+
+    local_overrides = load_config(local_override_path)
+    return merge_config_overrides(local_overrides, base_config=merged_config)
+
+
+def _build_lift_settings(lifts_config: list[dict[str, Any]]) -> list[LiftSettings]:
+    return [
+        LiftSettings(
+            name=_require_str(lift_config, "name", "lift settings"),
+            abbreviation=_require_str(lift_config, "abbreviation", "lift settings"),
+            bodyweight_coefficient=_require_float(
+                lift_config,
+                "bodyweight_coefficient",
+                _describe_lift(lift_config),
+            ),
+            rounding_increment=_get_rounding_increment(lift_config),
+            one_rep_max=_require_float(
+                lift_config,
+                "one_rep_max",
+                _describe_lift(lift_config),
+            ),
+            training_max_factor=_require_float(
+                lift_config,
+                "training_max_factor",
+                _describe_lift(lift_config),
+            ),
+        )
+        for lift_config in lifts_config
+    ]
+
+
+def _build_program_week_settings(
+    program_weeks_config: list[dict[str, Any]],
+) -> list[ProgramWeekSettings]:
+    return [
+        ProgramWeekSettings(
+            name=_require_str(week_config, "name", "program week settings"),
+            scaling_factors=_coerce_float_list(
+                week_config.get("scaling_factors", []),
+                f"{week_config.get('name', 'program week')} scaling_factors",
+            ),
+            reps_per_set=_coerce_int_list(
+                week_config.get("reps_per_set", []),
+                f"{week_config.get('name', 'program week')} reps_per_set",
+            ),
+        )
+        for week_config in program_weeks_config
+    ]
+
+
+def _build_lift(lift_config: dict[str, Any], context: str) -> Lift:
+    return Lift(
+        name=_require_str(lift_config, "name", context),
+        abbreviation=_require_str(lift_config, "abbreviation", context),
+        bodyweight_coefficient=_require_float(
+            lift_config,
+            "bodyweight_coefficient",
+            _describe_lift(lift_config),
+        ),
+        rounding_increment=_get_rounding_increment(lift_config),
+    )
+
+
+def _build_attempt_factors_config(attempt_factors_config: list[Any]) -> list[float]:
+    return _coerce_float_list(attempt_factors_config, "competition_attempt_factors")
 
 
 def _coerce_lift_config(lift_config: dict[str, Any] | LiftSettings) -> dict[str, Any]:
@@ -301,3 +368,45 @@ def _get_lift_identifiers(lift_config: dict[str, Any]) -> set[str]:
         identifiers.add(str(lift_config["name"]))
 
     return identifiers
+
+
+def _describe_lift(lift_config: dict[str, Any]) -> str:
+    if "name" in lift_config:
+        return str(lift_config["name"])
+
+    return "lift"
+
+
+def _require_str(config: dict[str, Any], key: str, context: str) -> str:
+    if key not in config:
+        raise ValueError(f"Missing '{key}' in {context}.")
+
+    return str(config[key])
+
+
+def _require_float(config: dict[str, Any], key: str, context: str) -> float:
+    if key not in config:
+        raise ValueError(f"Missing '{key}' in {context}.")
+
+    try:
+        return float(config[key])
+    except (TypeError, ValueError) as error:
+        raise ValueError(f"Expected '{key}' in {context} to be numeric.") from error
+
+
+def _coerce_float_list(values: list[Any], context: str) -> list[float]:
+    try:
+        return [float(value) for value in values]
+    except (TypeError, ValueError) as error:
+        raise ValueError(
+            f"Expected {context} to contain only numeric values."
+        ) from error
+
+
+def _coerce_int_list(values: list[Any], context: str) -> list[int]:
+    try:
+        return [int(value) for value in values]
+    except (TypeError, ValueError) as error:
+        raise ValueError(
+            f"Expected {context} to contain only integer values."
+        ) from error
