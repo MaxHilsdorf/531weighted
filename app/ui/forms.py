@@ -177,10 +177,21 @@ def _render_advanced_lift_inputs(lift: LiftSettings) -> tuple[LiftSettings, list
 def _render_attempt_factor_inputs(
     attempt_factors: list[float],
 ) -> tuple[list[float], list[str]]:
+    errors: list[str] = []
+
+    # Guard against empty attempt_factors to avoid st.columns(0), which raises an error.
+    if not attempt_factors:
+        st.error(
+            "No attempt factors are configured. Please configure at least one attempt factor."
+        )
+        errors.append(
+            "No attempt factors are configured. Please configure at least one attempt factor."
+        )
+        return [], errors
+
     columns = st.columns(len(attempt_factors))
     labels = ["1st attempt", "2nd attempt", "3rd attempt"]
     rendered_attempt_factors = []
-    errors: list[str] = []
 
     for index, attempt_factor in enumerate(attempt_factors):
         label = labels[index] if index < len(labels) else f"Attempt {index + 1}"
