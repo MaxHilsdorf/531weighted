@@ -12,11 +12,15 @@ class ProgramWeek(Enum):
 class Lift:
     name: str
     abbreviation: str
-    is_bodyweight: bool
+    bodyweight_coefficient: float
+
+    @property
+    def depends_on_bodyweight(self) -> bool:
+        return self.bodyweight_coefficient > 0
 
     @property
     def smallest_increment(self) -> float:
-        return 1.25 if self.is_bodyweight else 2.5
+        return 1.25 if self.depends_on_bodyweight else 2.5
 
     def round_weight(self, weight: float) -> float:
         increment = self.smallest_increment

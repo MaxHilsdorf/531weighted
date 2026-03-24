@@ -58,9 +58,9 @@ class FiveThreeOneProgram:
         for i in range(self.n_sets):
             scaling_factor = self.program_week_contexts[program_week].scaling_factors[i]
             raw_weight = self._get_working_weight(
+                lift=lift_context.lift,
                 training_max=training_max,
                 scaling_factor=scaling_factor,
-                is_bodyweight_lift=lift_context.lift.is_bodyweight,
             )
             weight = lift_context.lift.round_weight(raw_weight)
             reps = self.program_week_contexts[program_week].reps_per_set[i]
@@ -71,16 +71,22 @@ class FiveThreeOneProgram:
     def _get_training_max(self, lift_context: LiftContext) -> float:
         training_max_factor = self.lift_program_contexts[lift_context.lift].training_max_factor
 
-        if not lift_context.lift.is_bodyweight:
-            return lift_context.one_rep_max * training_max_factor
+        return self._scale_with_bodyweight_offset(
+            base_weight=lift_context.one_rep_max,
+            factor=training_max_factor,
+            lift=lift_context.lift,
+        )
 
-        return max(0.0, ((self.bodyweight + lift_context.one_rep_max) * training_max_factor) - self.bodyweight)
+    def _get_working_weight(self, lift: Lift, training_max: float, scaling_factor: float) -> float:
+        return self._scale_with_bodyweight_offset(
+            base_weight=training_max,
+            factor=scaling_factor,
+            lift=lift,
+        )
 
-    def _get_working_weight(self, training_max: float, scaling_factor: float, is_bodyweight_lift: bool) -> float:
-        if not is_bodyweight_lift:
-            return training_max * scaling_factor
-
-        return max(0.0, ((self.bodyweight + training_max) * scaling_factor) - self.bodyweight)
+    def _scale_with_bodyweight_offset(self, base_weight: float, factor: float, lift: Lift) -> float:
+        bodyweight_offset = self.bodyweight * lift.bodyweight_coefficient
+        return max(0.0, ((base_weight + bodyweight_offset) * factor) - bodyweight_offset)
 
     @staticmethod
     def _format_weight(weight: float) -> str:

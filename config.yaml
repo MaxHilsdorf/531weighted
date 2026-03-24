@@ -3,17 +3,17 @@ bodyweight: 74
 lifts:
   - name: Pull Up
     abbreviation: PU
-    is_bodyweight: true
+    bodyweight_coefficient: 0.95
     one_rep_max: 60
     training_max_factor: 0.87
   - name: Dip
     abbreviation: D
-    is_bodyweight: true
+    bodyweight_coefficient: 0.85
     one_rep_max: 95
     training_max_factor: 0.87
   - name: Squat
     abbreviation: SQ
-    is_bodyweight: false
+    bodyweight_coefficient: 0.25
     one_rep_max: 140
     training_max_factor: 0.90
 

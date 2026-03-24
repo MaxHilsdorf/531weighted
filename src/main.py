@@ -28,7 +28,7 @@ def _build_lift_program_contexts(lifts_config: list[dict]) -> dict[Lift, LiftPro
         lift = Lift(
             name=lift_config["name"],
             abbreviation=lift_config["abbreviation"],
-            is_bodyweight=lift_config["is_bodyweight"],
+            bodyweight_coefficient=float(lift_config["bodyweight_coefficient"]),
         )
         lift_context = LiftContext(
             lift=lift,
