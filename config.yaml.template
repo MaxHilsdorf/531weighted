@@ -1,0 +1,17 @@
+bodyweight: 75
+
+lifts:
+  - name: Muscle Up
+    one_rep_max: 5
+    training_max_factor: 0.87
+  - name: Pull Up
+    one_rep_max: 40
+    training_max_factor: 0.87
+  - name: Dip
+    one_rep_max: 60
+    training_max_factor: 0.87
+  - name: Squat
+    one_rep_max: 100
+    training_max_factor: 0.87
+
+zero_weight_strictness: 0.3
