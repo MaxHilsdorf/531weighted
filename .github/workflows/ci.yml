@@ -15,8 +15,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install make
-        run: apt-get update && apt-get install -y make
+      - name: Install system tools
+        run: apt-get update && apt-get install -y git make
 
       - name: Install dependencies
         run: uv sync --all-groups
