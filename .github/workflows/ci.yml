@@ -13,18 +13,16 @@ jobs:
       image: ghcr.io/astral-sh/uv:python3.13-trixie-slim
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Install system tools
+        run: apt-get update && apt-get install -y git make
 
-      - name: Install make
-        run: apt-get update && apt-get install -y make
+      - uses: actions/checkout@v4
 
       - name: Install dependencies
         run: uv sync --all-groups
 
       - name: Check formatting
-        run: |
-          make format
-          git diff --exit-code
+        run: make format-check
 
       - name: Run lint
         run: make lint

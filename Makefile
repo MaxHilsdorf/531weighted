@@ -1,7 +1,7 @@
 IMAGE_NAME ?= 531weighted
 PORT ?= 8501
 
-.PHONY: build run test format lint
+.PHONY: build run test format format-check lint
 
 build:
 	docker build -t $(IMAGE_NAME) .
@@ -14,6 +14,9 @@ test:
 
 format:
 	uv run ruff format
+
+format-check:
+	uv run ruff format --check
 
 lint:
 	uv run ruff check

@@ -1,4 +1,3 @@
-zero_weight_strictness: 0.4
 competition_attempt_factors: [0.87, 0.95, 1.0]
 
 lifts:
@@ -37,4 +36,4 @@ program_weeks:
       - scaling_factors: [0.40, 0.50, 0.60]
       - reps_per_set: [5, 5, 5]
 
-  
+zero_weight_strictness: 0.4
